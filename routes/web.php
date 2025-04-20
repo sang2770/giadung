@@ -7,6 +7,7 @@ use App\Http\Controllers\CartController;
 use App\Http\Controllers\IntroduceController;
 use App\Http\Controllers\ContentController;
 use App\Http\Controllers\ContactController;
+use App\Http\Controllers\PurchaseOrderController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\VnpayController;
 use App\Http\Middleware\AuthAdmin;
@@ -27,12 +28,17 @@ Route::get('/tin-tuc-chi-tiet/{id}', [ContentController::class, 'content_details
 Route::match(['GET', 'POST'], '/lien-he', [ContactController::class, 'index'])->name('contact.index');
 Route::get('/cua-hang/{product_id}', [ShopController::class, 'product_details'])->name('shop.product.details');
 Route::get('/filter-products', [ShopController::class, 'filterProducts'])->name('shop.filter');
-
 Route::get('/search-suggestions', [SearchController::class, 'getSuggestions']);
 Route::get('/search', [SearchController::class, 'search']); 
 Route::post('/save-search-history', [SearchController::class, 'saveSearchHistory']);
-
 Route::post('/vnpay_payment', [VnpayController::class, 'vnpay_payment'])->name('vnpay.return');
+Route::post('/admin/revenue-filter', [AdminController::class, 'filterRevenue'])->name('admin.revenue.filter');
+Route::get('/admin/profit-filter', [AdminController::class, 'filterProfit'])->name('admin.profit.filter');
+Route::get('/admin/chart-data', [AdminController::class, 'getChartData']);
+
+
+
+
 
 
 
@@ -135,5 +141,14 @@ Route::middleware(['auth',AuthAdmin::class])->group(function () {
     Route::get('/admin/contacts', [AdminController::class,'contacts'])->name('admin.contacts');
     Route::delete('/admin.contact/{id}/delete', [AdminController::class,'delete_contact'])->name('admin.contact.delete');
     
+
+    // Quản lý nhập hàng
+    Route::get('/admin/imports', [PurchaseOrderController::class, 'imports'])->name('admin.imports');
+    Route::get('/admin/import/add', [PurchaseOrderController::class, 'add_import'])->name('admin.import.add');
+    Route::post('admin/import/store', [PurchaseOrderController::class, 'store'])->name('admin.import.store');
+    Route::get('/admin/products/by-category/{id}', [PurchaseOrderController::class, 'getByCategory']);
+    Route::get('/admin/products/check-variants/{id}', [PurchaseOrderController::class, 'checkVariants']);
+    Route::get('/admin/products/variants/{id}', [PurchaseOrderController::class, 'getVariants']);
+
 
 });

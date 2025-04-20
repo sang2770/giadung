@@ -16,16 +16,138 @@ use App\Models\ProductVariant;
 use App\Models\Transaction;
 use App\Models\Slide;
 use App\Models\Content;
+use App\Models\User;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 
 class AdminController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        return view('admin.index');
+        $totalOrders = \App\Models\Order::count();
+        $totalUsers = \App\Models\User::count();
+        $totalRevenue = \App\Models\Order::where('status', 'delivered')
+                    ->sum('total');
+
+                    $totalImportPrice = 0;
+
+                    // Lấy tất cả các đơn hàng đã giao thành công
+                    $orders = Order::where('status', 'delivered')->get();
+                
+                    foreach ($orders as $order) {
+                        if ($order->orderItems) { // Sử dụng orderItems thay vì items
+                            foreach ($order->orderItems as $item) {
+                                $product = Product::find($item->product_id);
+                    
+                                if ($product) {
+                                    if ($product->has_variants) {
+                                        $variant = ProductVariant::where('product_id', $item->product_id)
+                                            ->where('size', $item->size ?? null)
+                                            ->where('color', $item->color ?? null)
+                                            ->first();
+                                        $importPrice = $variant ? $variant->import_price : 0;
+                                    } else {
+                                        $importPrice = $product->import_price;
+                                    }
+                    
+                                    $totalImportPrice += $importPrice * $item->quantity;
+                                }
+                            }
+                        }
+                    }
+                
+                    // Tính tổng lợi nhuận
+                    $totalProfit = $totalRevenue - $totalImportPrice;
+
+            return view('admin.index', compact('totalOrders', 'totalUsers', 'totalRevenue', 'totalProfit'));
     }
+
+    public function filterRevenue(Request $request)
+    {
+        $from = $request->from_date;
+        $to = $request->to_date;
+
+        $orders = Order::where('status', 'delivered') // Chỉ lấy đơn hàng đã giao
+            ->whereBetween('created_at', [$from, $to])
+            ->get();
+
+        $totalRevenue = $orders->sum('total');
+        $totalProfit = $orders->sum(function ($order) {
+            return $order->total - $order->cost;
+        });
+
+        return response()->json([
+            'totalRevenue' => $totalRevenue,
+            'totalProfit' => $totalProfit,
+        ]);
+    }
+
+    public function filterProfit(Request $request)
+    {
+        $from = $request->from_date;
+        $to = $request->to_date;
+
+        $totalImportPrice = 0;
+        $orders = Order::where('status', 'delivered')
+            ->whereBetween('created_at', [$from, $to])
+            ->with('orderItems')
+            ->get();
+
+        foreach ($orders as $order) {
+            foreach ($order->orderItems as $item) {
+                $product = Product::find($item->product_id);
+
+                if ($product) {
+                    if ($product->has_variants) {
+                        $variant = ProductVariant::where('product_id', $item->product_id)
+                            ->where('size', $item->size ?? null)
+                            ->where('color', $item->color ?? null)
+                            ->first();
+                        $importPrice = $variant ? $variant->import_price : 0;
+                    } else {
+                        $importPrice = $product->import_price;
+                    }
+
+                    $totalImportPrice += $importPrice * $item->quantity;
+                }
+            }
+        }
+
+        $totalRevenue = $orders->sum('total');
+        $totalProfit = $totalRevenue - $totalImportPrice;
+
+        return response()->json([
+            'totalProfit' => $totalProfit
+        ]);
+    }
+
+    public function getChartData()
+    {
+        $ordersByMonth = Order::selectRaw('MONTH(created_at) as month, COUNT(*) as count')
+            ->whereYear('created_at', now()->year)
+            ->groupBy('month')
+            ->pluck('count', 'month');
+
+        $usersByMonth = User::selectRaw('MONTH(created_at) as month, COUNT(*) as count')
+            ->whereYear('created_at', now()->year)
+            ->groupBy('month')
+            ->pluck('count', 'month');
+
+        // Tạo mảng 12 tháng với mặc định là 0
+        $months = collect(range(1, 12))->mapWithKeys(function ($month) use ($ordersByMonth, $usersByMonth) {
+            return [
+                $month => [
+                    'orders' => $ordersByMonth[$month] ?? 0,
+                    'users' => $usersByMonth[$month] ?? 0,
+                ]
+            ];
+        });
+
+        return response()->json($months);
+    }
+
+
 
     //Quản lý nhà cung cấp
     public function producers()
