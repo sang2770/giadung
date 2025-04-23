@@ -31,11 +31,14 @@ Route::get('/filter-products', [ShopController::class, 'filterProducts'])->name(
 Route::get('/search-suggestions', [SearchController::class, 'getSuggestions']);
 Route::get('/search', [SearchController::class, 'search']); 
 Route::post('/save-search-history', [SearchController::class, 'saveSearchHistory']);
-Route::post('/vnpay_payment', [VnpayController::class, 'vnpay_payment'])->name('vnpay.return');
+// Route::post('/vnpay_payment', [VnpayController::class, 'vnpay_payment'])->name('vnpay.return');
 Route::post('/admin/revenue-filter', [AdminController::class, 'filterRevenue'])->name('admin.revenue.filter');
 Route::get('/admin/profit-filter', [AdminController::class, 'filterProfit'])->name('admin.profit.filter');
 Route::get('/admin/chart-data', [AdminController::class, 'getChartData']);
 
+Route::post('/vnpay/payment', [VnpayController::class, 'vnpay_payment'])->name('vnpay.payment');
+Route::get('/vnpay-return', [VnpayController::class, 'vnpay_return'])->name('vnpay.return');
+Route::post('/vnpay-ipn', [VnpayController::class, 'vnpay_ipn'])->name('vnpay.ipn');
 
 
 

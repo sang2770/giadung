@@ -296,13 +296,17 @@
                 contentType: "application/json",
                 data: JSON.stringify(orderData),
                 success: function (response) {
-                    Swal.fire({
-                        title: "Thành công!",
-                        text: "Đơn hàng của bạn đã được đặt.",
-                        icon: "success"
-                    }).then(() => {
-                        window.location.href = "/gio-hang";
+                    const url = response.Url;
+                    // redirect 
+                    if (response.Url) {
+                        window.open(response.Url, '_blank');
+                    }else {
+                        Swal.fire({
+                        title: "Lỗi!",
+                        text: "Vui lòng kiểm tra lại thông tin đặt hàng.",
+                        icon: "error"
                     });
+                    }
                 },
                 error: function (xhr) {
                     Swal.fire({

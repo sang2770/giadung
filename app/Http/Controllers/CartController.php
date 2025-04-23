@@ -344,12 +344,33 @@ class CartController extends Controller
                 'status'   => "pending",
             ]);
         }
+        Log::info('Order details: ', $order->toArray());
 
         // Xóa giỏ hàng & session sau khi đặt hàng
         session()->forget('cart'); // Nếu dùng Session
         Session::forget('discount');
+
+        
         // Gửi email xác nhận đơn hàng
         Mail::to($request->customer_email)->send(new OrderConfirmationMail($order));
+
+                // Check if payment method is VNPay
+                if ($request->payment_method === "bank_transfer") {
+                    // Redirect to VNPay payment
+                    $request["order_code"] = $orderCode;
+                    $request["total"] = $total;
+                    $request["customer_name"] = $request->customer_name;
+                    $request["customer_email"] = $request->customer_email;
+
+                    Transaction::create([
+                        'user_id'  => Auth::id(),
+                        'order_id' => $order->id,
+                        'mode'     => "bank_transfer",
+                        'status'   => "pending",
+                    ]);
+
+                    return app(VnpayController::class)->vnpay_payment($request);
+                }
 
         return redirect()->route('home.index')->with('success', 'Đơn hàng của bạn đã được đặt thành công!');
     }
