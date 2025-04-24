@@ -133,7 +133,7 @@ class VnpayController extends Controller
         }
 
         // Giao dịch thành công
-        $order = Order::where('code', $inputData['vnp_TxnRef'])->first();
+        $order = Order::where('order_code', $inputData['vnp_TxnRef'])->first();
         $transaction = Transaction::where('order_id', $order->id);
         if ($order) {
             $transaction->update(['status' => 'paid']);

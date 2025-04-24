@@ -300,12 +300,20 @@
                     // redirect 
                     if (response.Url) {
                         window.open(response.Url, '_blank');
-                    }else {
+                    }else if (orderData.payment_method !== 'cod'){
                         Swal.fire({
                         title: "Lỗi!",
                         text: "Vui lòng kiểm tra lại thông tin đặt hàng.",
                         icon: "error"
-                    });
+                    }) else{
+                        Swal.fire({
+                        title: "Thành công!",
+                        text: "Đơn hàng của bạn đã được đặt.",
+                        icon: "success"
+                        }).then(() => {
+                            window.location.href = "/gio-hang";
+                        });
+                    };
                     }
                 },
                 error: function (xhr) {
